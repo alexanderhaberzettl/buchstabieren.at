@@ -14,7 +14,7 @@ der Österreichischen Sprachnormenkommission. Die alte Tabelle nach ÖNORM A 108
 - „Ch“, „Qu“ und „Sch“ wahlweise als Einheit (China, Quelle, Schule) oder Buchstabe für Buchstabe;
   die alte Tabelle kennt kein „Ch“, dort wird es als Cäsar – Heinrich buchstabiert
 - Vorlesen (Sprachausgabe des Browsers, de-AT) und Kopieren
-- Teilbarer Link: `?q=Haberzettl` (alte Tabelle: `&t=oenorm`)
+- Teilbarer Link: `?q=Graz` (alte Tabelle: `&t=oenorm`)
 - Buchstabiertafel zum Nachschlagen
 
 Online: https://alexanderhaberzettl.github.io/buchstabieren.at/

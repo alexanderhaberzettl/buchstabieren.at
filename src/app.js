@@ -1,9 +1,12 @@
 import { TABLES, DEFAULT_TABLE, spell } from './spell.js';
 
 const input = document.getElementById('input');
+const clearButton = document.getElementById('clear');
 const units = document.getElementById('units');
 const tableRadios = document.querySelectorAll('input[name="table"]');
+const examples = document.getElementById('examples');
 const result = document.getElementById('result');
+const output = document.getElementById('output');
 const line = document.getElementById('line');
 const speakButton = document.getElementById('speak');
 const copyButton = document.getElementById('copy');
@@ -17,10 +20,23 @@ const selectedTable = () =>
 
 function render() {
   const tableId = selectedTable();
+  const previous = tokens;
   tokens = spell(input.value, { table: tableId, units: units.checked });
-  result.replaceChildren(...tokens.map(tokenItem));
+
+  // Keep tiles that did not change so only new ones animate in.
+  let same = 0;
+  while (
+    same < previous.length && same < tokens.length &&
+    previous[same].char === tokens[same].char && previous[same].word === tokens[same].word
+  ) same++;
+  while (result.children.length > same) result.lastChild.remove();
+  result.append(...tokens.slice(same).map(tokenItem));
+
   line.textContent = tokens.map((t) => t.word).join(' – ');
-  speakButton.disabled = copyButton.disabled = tokens.length === 0;
+  const empty = tokens.length === 0;
+  output.hidden = empty;
+  examples.hidden = !empty;
+  clearButton.hidden = empty;
 
   const url = new URL(location.href);
   if (input.value) url.searchParams.set('q', input.value);
@@ -35,13 +51,16 @@ function tokenItem({ char, word, kind }) {
   li.className = `token ${kind}`;
   const letter = document.createElement('span');
   letter.className = 'char';
-  letter.textContent = /^\s$/.test(char) ? '␣' : char;
+  letter.textContent = /^\s$/.test(char) ? '␣' : badge(char);
   const name = document.createElement('span');
   name.className = 'word';
   name.textContent = word;
   li.append(letter, name);
   return li;
 }
+
+// Capitalize for the badge (Sch, Qu, Ö); ß has no single-letter capital in common use.
+const badge = (char) => (char[0] === 'ß' ? char : char[0].toUpperCase() + char.slice(1).toLowerCase());
 
 function renderTable() {
   const { name, entries } = TABLES[selectedTable()];
@@ -65,6 +84,12 @@ function renderTable() {
   }));
 }
 
+function setInput(value) {
+  input.value = value;
+  input.focus();
+  render();
+}
+
 function speak() {
   speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(tokens.map((t) => t.word).join(', '));
@@ -76,29 +101,30 @@ function speak() {
 }
 
 async function copy() {
+  const label = copyButton.querySelector('span');
+  const original = label.dataset.label ??= label.textContent;
   try {
     await navigator.clipboard.writeText(line.textContent);
-    flash(copyButton, 'Kopiert ✓');
+    label.textContent = 'Kopiert ✓';
   } catch {
-    flash(copyButton, 'Fehlgeschlagen');
+    label.textContent = 'Fehlgeschlagen';
   }
-}
-
-function flash(button, text) {
-  const original = button.dataset.label ??= button.textContent;
-  button.textContent = text;
-  setTimeout(() => (button.textContent = original), 1500);
+  setTimeout(() => (label.textContent = original), 1500);
 }
 
 if (!('speechSynthesis' in window)) speakButton.hidden = true;
 
 input.addEventListener('input', render);
+clearButton.addEventListener('click', () => setInput(''));
 units.addEventListener('change', render);
 for (const radio of tableRadios) {
   radio.addEventListener('change', () => {
     renderTable();
     render();
   });
+}
+for (const button of examples.querySelectorAll('button')) {
+  button.addEventListener('click', () => setInput(button.textContent));
 }
 speakButton.addEventListener('click', speak);
 copyButton.addEventListener('click', copy);
