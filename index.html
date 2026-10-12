@@ -20,10 +20,16 @@
       <input id="input" type="text" autocomplete="off" spellcheck="false" placeholder="z. B. Haberzettl" autofocus>
 
       <div class="options">
-        <label class="check">
-          <input id="digraphs" type="checkbox" checked>
-          „Ch“ und „Sch“ als Einheit
-        </label>
+        <div class="settings">
+          <div class="segmented" role="radiogroup" aria-label="Buchstabiertafel">
+            <label><input type="radio" name="table" value="2025" checked> Neu (2025)</label>
+            <label><input type="radio" name="table" value="oenorm"> Alt (ÖNORM)</label>
+          </div>
+          <label class="check">
+            <input id="units" type="checkbox" checked>
+            Ch, Qu, Sch als Einheit
+          </label>
+        </div>
         <div class="actions">
           <button id="speak" type="button" disabled>Vorlesen</button>
           <button id="copy" type="button" disabled>Kopieren</button>
@@ -35,11 +41,14 @@
     </section>
 
     <section class="card">
-      <h2>Buchstabiertafel</h2>
+      <h2 id="table-title">Buchstabiertafel</h2>
       <ul id="table" class="table"></ul>
     </section>
 
-    <footer>Nach ÖNORM A 1081.</footer>
+    <footer>
+      Neue Tabelle: <a href="http://oedeutsch.at/OEDTPORTAL/downloads/AT-Buchstabiertabelle%20NEU-2025.pdf">Österreichische Sprachnormenkommission, 2025</a>.
+      Alte Tabelle: ÖNORM A 1081 (2019 zurückgezogen).
+    </footer>
   </main>
 
   <script type="module" src="src/app.js"></script>

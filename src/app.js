@@ -1,17 +1,23 @@
-import { ALPHABET, spell } from './spell.js';
+import { TABLES, DEFAULT_TABLE, spell } from './spell.js';
 
 const input = document.getElementById('input');
-const digraphs = document.getElementById('digraphs');
+const units = document.getElementById('units');
+const tableRadios = document.querySelectorAll('input[name="table"]');
 const result = document.getElementById('result');
 const line = document.getElementById('line');
 const speakButton = document.getElementById('speak');
 const copyButton = document.getElementById('copy');
 const table = document.getElementById('table');
+const tableTitle = document.getElementById('table-title');
 
 let tokens = [];
 
+const selectedTable = () =>
+  [...tableRadios].find((r) => r.checked)?.value ?? DEFAULT_TABLE;
+
 function render() {
-  tokens = spell(input.value, { digraphs: digraphs.checked });
+  const tableId = selectedTable();
+  tokens = spell(input.value, { table: tableId, units: units.checked });
   result.replaceChildren(...tokens.map(tokenItem));
   line.textContent = tokens.map((t) => t.word).join(' – ');
   speakButton.disabled = copyButton.disabled = tokens.length === 0;
@@ -19,6 +25,8 @@ function render() {
   const url = new URL(location.href);
   if (input.value) url.searchParams.set('q', input.value);
   else url.searchParams.delete('q');
+  if (tableId !== DEFAULT_TABLE) url.searchParams.set('t', tableId);
+  else url.searchParams.delete('t');
   history.replaceState(null, '', url);
 }
 
@@ -33,6 +41,28 @@ function tokenItem({ char, word, kind }) {
   name.textContent = word;
   li.append(letter, name);
   return li;
+}
+
+function renderTable() {
+  const { name, entries } = TABLES[selectedTable()];
+  tableTitle.textContent = `Buchstabiertafel – ${name}`;
+  table.replaceChildren(...entries.map(([letter, word]) => {
+    const li = document.createElement('li');
+    const button = document.createElement('button');
+    button.type = 'button';
+    const b = document.createElement('b');
+    b.textContent = letter;
+    const span = document.createElement('span');
+    span.textContent = word;
+    button.append(b, span);
+    button.addEventListener('click', () => {
+      input.value += letter;
+      input.focus();
+      render();
+    });
+    li.append(button);
+    return li;
+  }));
 }
 
 function speak() {
@@ -60,28 +90,24 @@ function flash(button, text) {
   setTimeout(() => (button.textContent = original), 1500);
 }
 
-for (const [letter, word] of ALPHABET) {
-  const li = document.createElement('li');
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.innerHTML = `<b></b><span></span>`;
-  button.querySelector('b').textContent = letter;
-  button.querySelector('span').textContent = word;
-  button.addEventListener('click', () => {
-    input.value += letter;
-    input.focus();
-    render();
-  });
-  li.append(button);
-  table.append(li);
-}
-
 if (!('speechSynthesis' in window)) speakButton.hidden = true;
 
 input.addEventListener('input', render);
-digraphs.addEventListener('change', render);
+units.addEventListener('change', render);
+for (const radio of tableRadios) {
+  radio.addEventListener('change', () => {
+    renderTable();
+    render();
+  });
+}
 speakButton.addEventListener('click', speak);
 copyButton.addEventListener('click', copy);
 
-input.value = new URLSearchParams(location.search).get('q') ?? '';
+const params = new URLSearchParams(location.search);
+input.value = params.get('q') ?? '';
+const initialTable = params.get('t');
+if (initialTable in TABLES) {
+  for (const radio of tableRadios) radio.checked = radio.value === initialTable;
+}
+renderTable();
 render();

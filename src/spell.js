@@ -1,10 +1,46 @@
-// Österreichische Buchstabiertafel (ÖNORM A 1081)
-export const ALPHABET = [
+// Neue österreichische Buchstabiertabelle (Österreichische Sprachnormenkommission, 2025)
+// Quelle: http://oedeutsch.at/OEDTPORTAL/downloads/AT-Buchstabiertabelle%20NEU-2025.pdf
+const TABLE_2025 = [
+  ['A', 'Anna'],
+  ['Ä', 'Ärmel'],
+  ['B', 'Bernhard'],
+  ['C', 'Cäsar'],
+  ['Ch', 'China'],
+  ['D', 'David'],
+  ['E', 'Emma'],
+  ['F', 'Felix'],
+  ['G', 'Georg'],
+  ['H', 'Hannes'],
+  ['I', 'Ida'],
+  ['J', 'Jakob'],
+  ['K', 'Karin'],
+  ['L', 'Leo'],
+  ['M', 'Marie'],
+  ['N', 'Nora'],
+  ['O', 'Otto'],
+  ['Ö', 'Österreich'],
+  ['P', 'Peter'],
+  ['Qu', 'Quelle'],
+  ['R', 'Rosa'],
+  ['S', 'Sarah'],
+  ['Sch', 'Schule'],
+  ['ß', 'scharfes S'],
+  ['T', 'Tina'],
+  ['U', 'Udo'],
+  ['Ü', 'Übung'],
+  ['V', 'Vera'],
+  ['W', 'Walter'],
+  ['X', 'Xaver'],
+  ['Y', 'Ypsilon'],
+  ['Z', 'Zita'],
+];
+
+// Alte Tabelle nach ÖNORM A 1081 (1985/2010, 2019 zurückgezogen). „Ch“ hat keinen eigenen Eintrag.
+const TABLE_OENORM = [
   ['A', 'Anton'],
   ['Ä', 'Ärger'],
   ['B', 'Berta'],
   ['C', 'Cäsar'],
-  ['Ch', 'Christine'],
   ['D', 'Dora'],
   ['E', 'Emil'],
   ['F', 'Friedrich'],
@@ -19,7 +55,7 @@ export const ALPHABET = [
   ['O', 'Otto'],
   ['Ö', 'Österreich'],
   ['P', 'Paula'],
-  ['Q', 'Quelle'],
+  ['Qu', 'Quelle'],
   ['R', 'Richard'],
   ['S', 'Siegfried'],
   ['Sch', 'Schule'],
@@ -34,8 +70,27 @@ export const ALPHABET = [
   ['Z', 'Zürich'],
 ];
 
+export const TABLES = {
+  '2025': { name: 'Neue Tabelle (2025)', entries: TABLE_2025 },
+  oenorm: { name: 'ÖNORM A 1081 (alt)', entries: TABLE_OENORM },
+};
+
+export const DEFAULT_TABLE = '2025';
+
 // 'ß'.toUpperCase() is 'SS', so ß keeps its own key.
-const WORDS = new Map(ALPHABET.map(([letter, word]) => [letter === 'ß' ? letter : letter.toUpperCase(), word]));
+const key = (s) => (s === 'ß' ? s : s.toUpperCase());
+
+const LOOKUPS = Object.fromEntries(
+  Object.entries(TABLES).map(([id, { entries }]) => {
+    const words = new Map(entries.map(([letter, word]) => [key(letter), word]));
+    // Multi-letter units, longest first so "Sch" wins over "Ch".
+    const units = entries
+      .map(([letter]) => key(letter))
+      .filter((k) => k.length > 1)
+      .sort((a, b) => b.length - a.length);
+    return [id, { words, units }];
+  }),
+);
 
 const DIGITS = ['null', 'eins', 'zwei', 'drei', 'vier', 'fünf', 'sechs', 'sieben', 'acht', 'neun'];
 
@@ -62,42 +117,41 @@ const SYMBOLS = {
 /**
  * Splits text into spelling tokens.
  * Each token: { char, word, kind } with kind 'letter' | 'digit' | 'symbol' | 'unknown'.
- * With `digraphs` enabled, "Ch" and "Sch" are spelled as one unit (Christine, Schule).
+ * With `units` enabled, multi-letter entries of the table (Ch, Qu, Sch) are spelled as one.
  */
-export function spell(text, { digraphs = true } = {}) {
+export function spell(text, { table = DEFAULT_TABLE, units = true } = {}) {
+  const lookup = LOOKUPS[table];
+  if (!lookup) throw new Error(`Unknown table: ${table}`);
   const chars = Array.from(text.normalize('NFC'));
   const tokens = [];
 
   for (let i = 0; i < chars.length; i++) {
-    if (digraphs) {
-      const three = chars.slice(i, i + 3).join('');
-      const two = chars.slice(i, i + 2).join('');
-      if (three.toUpperCase() === 'SCH') {
-        tokens.push({ char: three, word: WORDS.get('SCH'), kind: 'letter' });
-        i += 2;
-        continue;
-      }
-      if (two.toUpperCase() === 'CH') {
-        tokens.push({ char: two, word: WORDS.get('CH'), kind: 'letter' });
-        i += 1;
-        continue;
-      }
+    const unit = units && lookup.units.find(
+      (u) => chars.slice(i, i + u.length).join('').toUpperCase() === u,
+    );
+    if (unit) {
+      tokens.push({ char: chars.slice(i, i + unit.length).join(''), word: lookup.words.get(unit), kind: 'letter' });
+      i += unit.length - 1;
+      continue;
     }
-    tokens.push(spellChar(chars[i]));
+    tokens.push(spellChar(chars[i], lookup.words));
   }
   return tokens;
 }
 
-function spellChar(char) {
-  if (char === 'ß' || char === 'ẞ') return { char, word: WORDS.get('ß'), kind: 'letter' };
+function spellChar(char, words) {
+  if (char === 'ß' || char === 'ẞ') return { char, word: words.get('ß'), kind: 'letter' };
 
   const upper = char.toUpperCase();
-  if (WORDS.has(upper)) return { char, word: WORDS.get(upper), kind: 'letter' };
+  if (words.has(upper)) return { char, word: words.get(upper), kind: 'letter' };
+
+  // Q alone (e.g. when units are off) falls back to the "Qu" word.
+  if (upper === 'Q') return { char, word: words.get('QU'), kind: 'letter' };
 
   // Letters with other diacritics (é, à, č, …): spell the base letter and name the accent.
   const base = upper.normalize('NFD').replace(/\p{M}/gu, '');
-  if (base !== upper && WORDS.has(base)) {
-    return { char, word: `${WORDS.get(base)} mit Akzent`, kind: 'letter' };
+  if (base !== upper && words.has(base)) {
+    return { char, word: `${words.get(base)} mit Akzent`, kind: 'letter' };
   }
 
   if (/^[0-9]$/.test(char)) return { char, word: DIGITS[Number(char)], kind: 'digit' };
@@ -106,7 +160,7 @@ function spellChar(char) {
   return { char, word: char, kind: 'unknown' };
 }
 
-/** One-line spoken form, e.g. "Otto – Theodor – Theodor – Otto". */
+/** One-line spoken form, e.g. "Otto – Tina – Tina – Otto". */
 export function spellToString(text, options) {
   return spell(text, options).map((t) => t.word).join(' – ');
 }
