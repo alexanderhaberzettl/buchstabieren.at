@@ -1,0 +1,11 @@
+{
+  "name": "buchstabieren.at",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Buchstabieren nach der österreichischen Buchstabiertafel",
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "start": "npx --yes serve ."
+  }
+}

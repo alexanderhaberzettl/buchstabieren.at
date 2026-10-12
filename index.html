@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="de-AT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Buchstabieren.at</title>
+  <meta name="description" content="Wörter und Namen nach der österreichischen Buchstabiertafel buchstabieren.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%23c8102e%27/%3E%3Crect y=%2711%27 width=%2732%27 height=%2710%27 fill=%27%23fff%27/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="src/style.css">
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Buchstabieren<span>.at</span></h1>
+      <p>Namen, Adressen und Codes nach der österreichischen Buchstabiertafel.</p>
+    </header>
+
+    <section class="card">
+      <label for="input">Was möchtest du buchstabieren?</label>
+      <input id="input" type="text" autocomplete="off" spellcheck="false" placeholder="z. B. Haberzettl" autofocus>
+
+      <div class="options">
+        <label class="check">
+          <input id="digraphs" type="checkbox" checked>
+          „Ch“ und „Sch“ als Einheit
+        </label>
+        <div class="actions">
+          <button id="speak" type="button" disabled>Vorlesen</button>
+          <button id="copy" type="button" disabled>Kopieren</button>
+        </div>
+      </div>
+
+      <ol id="result" class="result" aria-live="polite"></ol>
+      <p id="line" class="line"></p>
+    </section>
+
+    <section class="card">
+      <h2>Buchstabiertafel</h2>
+      <ul id="table" class="table"></ul>
+    </section>
+
+    <footer>Nach ÖNORM A 1081.</footer>
+  </main>
+
+  <script type="module" src="src/app.js"></script>
+</body>
+</html>
