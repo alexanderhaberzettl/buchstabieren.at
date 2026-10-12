@@ -17,6 +17,8 @@ der Österreichischen Sprachnormenkommission. Die alte Tabelle nach ÖNORM A 108
 - Teilbarer Link: `?q=Haberzettl` (alte Tabelle: `&t=oenorm`)
 - Buchstabiertafel zum Nachschlagen
 
+Online: https://alexanderhaberzettl.github.io/buchstabieren.at/
+
 ## Entwicklung
 
 Reine statische Seite ohne Build-Schritt und ohne Abhängigkeiten.
@@ -27,3 +29,10 @@ npm test    # Unit-Tests (Node ≥ 20)
 ```
 
 Die Logik liegt in `src/spell.js`, die Oberfläche in `index.html`, `src/app.js` und `src/style.css`.
+
+## Veröffentlichung
+
+Jeder Push auf den Default-Branch führt die Tests aus und veröffentlicht
+`index.html` und `src/` über GitHub Actions auf GitHub Pages
+(`.github/workflows/pages.yml`). Einmalig nötig: unter *Settings → Pages* als
+*Source* „GitHub Actions“ auswählen.
